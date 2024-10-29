@@ -50,20 +50,31 @@ def fetch_task_ids(apikey, authorization):
         print(f"{Fore.RED+Style.BRIGHT}Failed to fetch tasks: {e}")
         return []
 
-def upgrade_dtc_miner(apikey, authorization):
-    url = f'{BASE}/functions/v1/upgradeDTCMiner'
-    headers = get_headers(apikey, authorization)
+def upgrade_dtc_miner(apikey, authorization, uId):
+    headers = get_headers(apikey, authorization, uId)
+    urls = [
+        f'{BASE}/functions/v1/upgradeDTCMiner',
+        f'{BASE}/functions/v1/upgradeDTCMinerWeb3'
+    ]
     
-    try:
-        response = requests.post(url, headers=headers)
-        response.raise_for_status()
-        response_data = response.json()
-        if response_data.get('success', False):
-            print(f"{Fore.GREEN+Style.BRIGHT}Successfully upgraded DTC Miner.")
-        else:
-            print(f"{Fore.RED+Style.BRIGHT}Failed to upgrade DTC Miner, code: {response_data.get('code')}. Hint: Verification required.")
-    except requests.RequestException as e:
-        print(f"{Fore.RED+Style.BRIGHT}Failed to upgrade DTC Miner, status code: {response.status_code}")
+    for i, url in enumerate(urls, start=1):
+        try:
+            response = requests.post(url, headers=headers)
+            response.raise_for_status()
+            response_data = response.json()
+            
+            if response_data.get('success', False):
+                print(f"{Fore.GREEN}{Style.BRIGHT}Attempt {'Web2' if i == 1 else 'Web3'}: Successfully upgraded DTC Miner.")
+                return True
+            
+            print(f"{Fore.YELLOW}{Style.BRIGHT}Attempt on {'Web2' if i == 1 else 'Web3'} unsuccessful. Code: {response_data.get('code')}")
+        
+        except requests.RequestException as e:
+            print(f"{Fore.RED}{Style.BRIGHT}Attempt on {'Web2' if i == 1 else 'Web3'} failed, error: {str(e)}")
+            continue
+    
+    print(f"{Fore.RED}{Style.BRIGHT}Failed to upgrade DTC Miner after all attempts. Verification may be required.")
+    return False
 
 def add_attempts(lvl, apikey, authorization,current_level):
     url = f'{ENDPOINT}/rpc/add_attempts'
@@ -263,14 +274,14 @@ def main():
                         info = get_user_info(apikey, authorization)
                         energy = info['daily_attempts']
                 else:
-                    print(f"{Fore.RED+Style.BRIGHT}Your energy is running out. Waiting for energy refill...")
+                    print(f"{Fore.RED+Style.BRIGHT}[ Energy ] Your energy is running out. Waiting for energy refill...")
                     if energy == 0:
                         restore_attempts(apikey, authorization)
                         info = get_user_info(apikey, authorization)
                         energy = info['daily_attempts']
 
                 if auto_upgrade_dtc == 'y':
-                    upgrade_dtc_miner(apikey, authorization)
+                    upgrade_dtc_miner(apikey, authorization, info['id'])
 
      
 

@@ -1,6 +1,6 @@
 from fake_useragent import UserAgent
 
-def get_headers(apikey, authorization):
+def get_headers(apikey, authorization, userId=None):
     ua = UserAgent()
     return {
         'accept': '*/*',
@@ -18,4 +18,5 @@ def get_headers(apikey, authorization):
         'sec-fetch-site': 'cross-site',
         'user-agent': ua.random,
         'x-client-info': 'postgrest-js/1.9.2',
+        'x-telegram-user-id': str(userId)
     }
